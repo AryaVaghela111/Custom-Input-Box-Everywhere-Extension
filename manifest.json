@@ -3,7 +3,7 @@
   "name": "Floating Input Box",
   "version": "1.0",
   "description": "Move input to a floating box",
-  "permissions": ["activeTab", "tabs"],
+  "permissions": ["activeTab", "tabs", "scripting"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
