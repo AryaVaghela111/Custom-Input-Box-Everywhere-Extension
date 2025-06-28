@@ -204,6 +204,18 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+document.addEventListener("keydown", (e) => {
+  if (e.key === "\\" && e.ctrlKey ) {  // Alt + Shift + \
+    e.preventDefault();
+    mode = "css";
+    floatingInput.placeholder = "Write CSS here. Alt + Enter to apply.";
+    floatingInput.value = userCSS;
+    console.log("🎨 CSS edit mode activated");
+    floatingInput.style.display = "block";
+    floatingInput.focus();
+  }
+});
+
 // === Listen for Gemini Response
 chrome.runtime.onMessage.addListener((msg) => {
   console.log("📩 Received message from background:", msg);
