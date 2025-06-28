@@ -132,3 +132,15 @@ observer.observe(document.body, {
   childList: true,
   subtree: true,
 });
+
+// === Inject Basic Global CSS ===
+const globalStyle = document.createElement("style");
+globalStyle.id = "global-llm-style";
+globalStyle.innerText = `
+  body {
+    // background-color: black !important;
+    // color: white !important;
+  }
+`;
+document.head.appendChild(globalStyle);
+
