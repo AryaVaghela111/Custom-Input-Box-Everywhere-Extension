@@ -1,0 +1,14 @@
+#floating-input-box {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  z-index: 9999;
+  background: white;
+  border: 2px solid #333;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  display: none;
+}
