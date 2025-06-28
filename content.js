@@ -1,4 +1,5 @@
 // === Floating Input Box Setup ===
+console.log("✅ content.js injected");
 const floatingInput = document.createElement("textarea");
 Object.assign(floatingInput.style, {
   position: "fixed",
@@ -18,10 +19,11 @@ Object.assign(floatingInput.style, {
 floatingInput.id = "floating-input-box";
 floatingInput.placeholder = "Type here. Ctrl + Enter to send.";
 document.body.appendChild(floatingInput);
+console.log("✅ floating input element added");
 
 // === Active Field Tracking & Mode ===
 let targetInput = null;
-let mode = "text"; // "text" or "css"
+let mode = "text"; // "text", "css", "llm"
 let userCSS = "/* Initial CSS */";
 
 // === Global Style Setup ===
@@ -29,16 +31,15 @@ let globalStyle = document.createElement("style");
 globalStyle.id = "global-llm-style";
 globalStyle.innerText = userCSS;
 document.head.appendChild(globalStyle);
+console.log("✅ global style element injected");
 
 // === Apply CSS (helper)
 function applyGlobalCSS() {
-  // Apply CSS to the main document
   if (!globalStyle.parentNode) {
     document.head.appendChild(globalStyle);
   }
   globalStyle.innerText = userCSS;
 
-  // Traverse and inject into all shadow roots
   const injectIntoShadowRoots = (root) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     while (walker.nextNode()) {
@@ -53,35 +54,31 @@ function applyGlobalCSS() {
         } else {
           existing.innerText = userCSS;
         }
-
-        // Recursively check nested shadow roots
         injectIntoShadowRoots(el.shadowRoot);
       }
     }
   };
-
   injectIntoShadowRoots(document);
-
   console.log("🎨 CSS applied to document and shadow roots");
 }
 
-
-// === Watch for SPA Navigation (URL changes) ===
+// === Watch for SPA Navigation
 let lastHref = location.href;
 const navigationObserver = new MutationObserver(() => {
   if (location.href !== lastHref) {
+    console.log(`🔄 Detected URL change: ${lastHref} → ${location.href}`);
     lastHref = location.href;
     setTimeout(() => {
-      applyGlobalCSS(); // Apply after DOM updates
+      applyGlobalCSS();
     }, 500);
   }
 });
 navigationObserver.observe(document.body, { childList: true, subtree: true });
 
-// === Push Text to Target Field ===
+// === Push Text to Target Field
 function sendTextToField(el, value) {
   if (!el) return;
-
+  console.log("💡 Injecting value into target:", value);
   if (el.isContentEditable) {
     el.focus();
     while (el.firstChild) el.removeChild(el.firstChild);
@@ -102,48 +99,59 @@ function sendTextToField(el, value) {
   } else {
     console.warn("❌ Unsupported target:", el);
   }
-
-  console.log("✅ Synced to:", el);
+  console.log("✅ Synced to target:", el);
 }
 
-// === Keyboard Handling for Popup ===
+// === Keyboard Handling
 floatingInput.addEventListener("keydown", (e) => {
+  console.log(`⌨️ Keydown: key=${e.key} mode=${mode}`);
   if (e.key === "Enter" && e.ctrlKey && targetInput && mode === "text") {
     e.preventDefault();
+    console.log("🚀 Sending text to field (habit mode)");
     sendTextToField(targetInput, floatingInput.value);
     floatingInput.style.display = "none";
     targetInput = null;
   }
-
   if (e.key === "Enter" && e.altKey && mode === "css") {
     e.preventDefault();
+    console.log("🚀 Applying CSS");
     userCSS = floatingInput.value;
     applyGlobalCSS();
     floatingInput.style.display = "none";
-    console.log("🎨 CSS applied:", userCSS);
   }
-
+  if (e.key === "Enter" && e.ctrlKey && mode === "llm") {
+    e.preventDefault();
+    const prompt = floatingInput.value;
+    floatingInput.placeholder = "Waiting for Gemini...";
+    console.log("🤖 Sending prompt to Gemini:", prompt);
+    chrome.runtime.sendMessage({
+      type: "llmRequest",
+      text: prompt
+    });
+  }
   if (e.key === "Escape") {
+    console.log("❌ Escape pressed, hiding floating input");
     floatingInput.style.display = "none";
     targetInput = null;
   }
 });
 
-// === Show Popup with Current Content ===
+// === Show Popup with Current Content
 function showFloatingInput(el) {
   targetInput = el;
   mode = "text";
+  console.log("🟢 Activating floating input for:", el);
   floatingInput.placeholder = "Type here. Ctrl + Enter to send.";
   floatingInput.value = el.isContentEditable ? el.innerText || "" : el.value || "";
   floatingInput.style.display = "block";
   floatingInput.focus();
 }
 
-// === Detect and Show on Focus ===
+// === Detect and Show on Focus
 document.addEventListener("focusin", (e) => {
+  console.log("🔎 focusin detected:", e.target);
   const el = e.target;
   if (el === floatingInput) return;
-
   if (
     el.tagName === "TEXTAREA" ||
     (el.tagName === "INPUT" && el.type === "text") ||
@@ -153,15 +161,16 @@ document.addEventListener("focusin", (e) => {
   }
 });
 
-// === Fallback: Listen for Click on contenteditable ===
+// === Fallback for click on contenteditable
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[contenteditable='true']");
   if (el && el !== floatingInput) {
+    console.log("🔎 click detected on contenteditable:", el);
     showFloatingInput(el);
   }
 });
 
-// === Observe dynamic editable fields ===
+// === Observe dynamic contenteditables
 const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     mutation.addedNodes.forEach((node) => {
@@ -170,7 +179,7 @@ const observer = new MutationObserver((mutations) => {
         node.matches &&
         node.matches("[contenteditable='true']")
       ) {
-        console.log("🆕 Detected new editable:", node);
+        console.log("🆕 Detected new editable field:", node);
         node.addEventListener("click", () => showFloatingInput(node));
       }
     });
@@ -178,15 +187,32 @@ const observer = new MutationObserver((mutations) => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-// === Global Shortcut to Enter CSS Mode ===
+// === Global Shortcut to Enter LLM Mode
 document.addEventListener("keydown", (e) => {
-  if (e.key === "\\" && e.altKey) { // Alt + \ → toggle CSS mode
+  if (e.key === "\\" && e.altKey) {
     e.preventDefault();
-    mode = "css";
-    floatingInput.placeholder = "Write CSS here. Alt + Enter to apply.";
-    floatingInput.value = userCSS;
+    mode = "llm";
+    floatingInput.placeholder = "Type LLM prompt. Ctrl+Enter to send to Gemini.";
+    if (targetInput) {
+      floatingInput.value = targetInput.isContentEditable ? targetInput.innerText : targetInput.value;
+    } else {
+      floatingInput.value = "";
+    }
+    console.log("🤖 LLM mode activated");
     floatingInput.style.display = "block";
     floatingInput.focus();
-    console.log("✏️ CSS edit mode activated");
+  }
+});
+
+// === Listen for Gemini Response
+chrome.runtime.onMessage.addListener((msg) => {
+  console.log("📩 Received message from background:", msg);
+  if (msg.type === "llmResponse") {
+    if (targetInput) {
+      console.log("🤖 Gemini returned answer, injecting into target");
+      sendTextToField(targetInput, msg.text);
+      floatingInput.style.display = "none";
+      targetInput = null;
+    }
   }
 });
