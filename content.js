@@ -135,6 +135,11 @@ floatingInput.addEventListener("keydown", (e) => {
     targetInput = null;
   }
 });
+floatingInput.addEventListener("input", () => {
+  if (mode === "text" && targetInput) {
+    sendTextToField(targetInput, floatingInput.value);
+  }
+});
 
 // === Show Popup with Current Content
 function showFloatingInput(el) {
