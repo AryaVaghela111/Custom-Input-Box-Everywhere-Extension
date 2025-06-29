@@ -20,6 +20,35 @@ floatingInput.id = "floating-input-box";
 floatingInput.placeholder = "Type here. Ctrl + Enter to send.";
 document.body.appendChild(floatingInput);
 console.log("✅ floating input element added");
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+floatingInput.addEventListener("mousedown", (e) => {
+  if (e.target === floatingInput) {
+    isDragging = true;
+    dragOffsetX = e.clientX - floatingInput.getBoundingClientRect().left;
+    dragOffsetY = e.clientY - floatingInput.getBoundingClientRect().top;
+    floatingInput.style.cursor = "move";
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    floatingInput.style.left = `${e.clientX - dragOffsetX}px`;
+    floatingInput.style.top = `${e.clientY - dragOffsetY}px`;
+    floatingInput.style.transform = "none"; // disable centering while dragging
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  if (isDragging) {
+    isDragging = false;
+    floatingInput.style.cursor = "text";
+  }
+});
+
 
 // === Active Field Tracking & Mode ===
 let targetInput = null;
