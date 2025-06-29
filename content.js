@@ -205,7 +205,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "\\" && e.ctrlKey ) {  // Alt + Shift + \
+  if (e.key === "\\" && e.ctrlKey ) {  
     e.preventDefault();
     mode = "css";
     floatingInput.placeholder = "Write CSS here. Alt + Enter to apply.";
@@ -219,12 +219,29 @@ document.addEventListener("keydown", (e) => {
 // === Listen for Gemini Response
 chrome.runtime.onMessage.addListener((msg) => {
   console.log("📩 Received message from background:", msg);
+
   if (msg.type === "llmResponse") {
+    // Try to extract CSS block from Gemini response
+    const cssMatch = msg.text.match(/```css\s*([\s\S]*?)```/i);
+    const cleanCSS = cssMatch ? cssMatch[1].trim() : "";
+
+    if (cleanCSS) {
+      console.log("🎨 Auto-applying detected CSS from Gemini response");
+      userCSS = cleanCSS;
+      applyGlobalCSS();
+      floatingInput.style.display = "none";
+      return; // Exit early — don't push text into field
+    }
+
     if (targetInput) {
-      console.log("🤖 Gemini returned answer, injecting into target");
-      sendTextToField(targetInput, msg.text);
+      // Not CSS, or fallback to pushing raw text
+      console.log("💬 No valid CSS, pushing raw text to field");
+      sendTextToField(targetInput, msg.text.trim());
       floatingInput.style.display = "none";
       targetInput = null;
+    } else {
+      console.warn("⚠️ No target input to send text to.");
     }
   }
 });
+
