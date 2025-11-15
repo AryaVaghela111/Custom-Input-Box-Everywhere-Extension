@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(async (msg, sender) => {
     const prompt = msg.text;
 
     try {
-      const apiKey = "AIzaSyABDPIyvuYo9DaclED0HhT7CPYyWlsass4"; 
+      const apiKey = "YOUR API KEY"; 
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
